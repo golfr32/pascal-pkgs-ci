@@ -2,7 +2,7 @@
 
 The main repository for building Pascal-compatible versions of ML applications and libraries.
 
-1. vLLM `0.5.5`, `0.6.0`, `0.6.1`, `0.6.1.post1`, `0.6.1.post`, `0.6.2`, `0.6.3`, `0.6.3.post1`, `0.6.4`, `0.6.4.post1`, `0.6.5`, `0.6.6`, `0.6.6.post1`, `0.7.0`, `0.7.1`, `0.7.2`, `0.7.3`, `0.8.0`, `0.8.1`, `0.8.2`, `0.8.3`, `0.8.4`, `0.8.5`, `0.9.0`, `0.9.1`, `0.9.2`, `0.10.0` and `main` (nightly, updates daily) are available in this repository.
+1. vLLM `0.5.5`, `0.6.0`, `0.6.1`, `0.6.1.post1`, `0.6.1.post`, `0.6.2`, `0.6.3`, `0.6.3.post1`, `0.6.4`, `0.6.4.post1`, `0.6.5`, `0.6.6`, `0.6.6.post1`, `0.7.0`, `0.7.1`, `0.7.2`, `0.7.3`, `0.8.0`, `0.8.1`, `0.8.2`, `0.8.3`, `0.8.4`, `0.8.5`, `0.9.0`, `0.9.1`, and `main` (nightly, updates daily) are available in this repository.
 2. Triton `2.2.0`, `2.3.0`, `2.3.1`, `3.0.0`, `3.1.0`, `3.2.0`, `3.3.0`, `3.3.1`, `3.4.0` are available in this repository.
 
 > [!IMPORTANT]
@@ -27,6 +27,20 @@ docker pull ghcr.io/sasha0552/vllm:v0.10.0  # you can omit the version specifier
 ```
 
 ## Installation (manual)
+
+### Pull vLLM source
+
+```bash
+git clone https://github.com/vllm-project/vllm
+cd vllm
+#checkout the desired branch/tag 
+git checkout releases/v0.9.1
+# install dependencies
+uv sync
+# Transformers need to be installed separately with the version `transformers==4.51.3`
+pip install "transformers==4.51.3" "huggingface-hub==0.36.2" "okenizers==0.21.4"
+
+```
 
 > [!WARNING]
 > Wheels, as of v0.6.5, is currently in a soft-broken state due to PyTorch.
@@ -103,8 +117,64 @@ transient-package install       \
   --source triton               \
   --target triton-pascal
 
+
 # Launch vLLM
 vllm serve --help
+```
+
+If using `conda`
+
+```sh
+# Use this repository
+export PIP_EXTRA_INDEX_URL="https://sasha0552.github.io/pascal-pkgs-ci/"
+
+# Create conda virtual environment
+conda create -n vllm-env python
+
+# Activate virtual environment
+conda activate vllm-env
+conda install uv pipx --channel conda-forge -y
+
+# Install vLLM
+pip install vllm-pascal==0.10.0  # you can omit the version specifier
+                                  # to install nightly version
+
+# Install patched triton
+transient-package install       \
+  --interpreter $CONDA_PREFIX/bin/python \
+  --source triton               \
+  --target triton-pascal
+
+
+# Launch vLLM
+vllm serve --help
+```
+
+Notes: Fix the ***"vLLM package not found"*** warning permanently
+
+This is what breaks platform detection. Create a fake dist-info so importlib.metadata finds vllm:
+
+```bash
+# Find where vllm-pascal installed its files
+VLLM_DIR=$(python3 -c "import vllm; import os; print(os.path.dirname(vllm.__file__))")
+SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
+
+# Get the actual version
+VLLM_VERSION=$(python3 -c "from importlib.metadata import version; print(version('vllm-pascal'))" 2>/dev/null || echo "0.9.1")
+
+# Create a minimal dist-info directory that claims to be 'vllm'
+mkdir -p "$SITE_PACKAGES/vllm-${VLLM_VERSION}.dist-info"
+
+cat > "$SITE_PACKAGES/vllm-${VLLM_VERSION}.dist-info/METADATA" << EOF
+Metadata-Version: 2.1
+Name: vllm
+Version: ${VLLM_VERSION}
+EOF
+
+cat > "$SITE_PACKAGES/vllm-${VLLM_VERSION}.dist-info/RECORD" << EOF
+EOF
+
+echo "Created vllm dist-info for version $VLLM_VERSION"
 ```
 
 ### [aphrodite-engine](https://github.com/PygmalionAI/aphrodite-engine)
@@ -141,6 +211,15 @@ export PIP_EXTRA_INDEX_URL="https://sasha0552.github.io/pascal-pkgs-ci/"
 # Install patched triton
 transient-package install       \
   --interpreter venv/bin/python \
+  --source triton               \
+  --target triton-pascal
+```
+
+If using `conda`
+
+```sh
+transient-package install       \
+  --interpreter $CONDA_PREFIX/bin/python \
   --source triton               \
   --target triton-pascal
 ```
