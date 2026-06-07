@@ -6,6 +6,7 @@ repository="$2"
 ref="$3"
 ghcr_user="$4"
 ghcr_token="$5"
+CUDA_VERSION="12.1.0"
 
 # Use root directory
 cd "$root"
@@ -52,7 +53,7 @@ cd "$root"
 # Build wheels
 mkdir -p "$root/tmp"
 docker build \
-  --build-arg "CUDA_VERSION=12.1.0" \
+  --build-arg "CUDA_VERSION=$CUDA_VERSION" \
   --build-arg "USE_SCCACHE=0" \
   --build-arg "torch_cuda_arch_list=6.0 6.1" \
   --build-arg "max_jobs=2" \
