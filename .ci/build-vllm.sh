@@ -9,7 +9,7 @@ repository="$2"
 ref="$3"
 ghcr_user="$4"
 ghcr_token="$5"
-CUDA_VERSION=${6:-"12.1.0"}
+CUDA_VERSION=${6:-"12.8.1"}
 
 # Use root directory
 cd "$root"
